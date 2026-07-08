@@ -26,6 +26,23 @@ function montarQueryFiltros() {
   return params.toString();
 }
 
+async function carregarBancos() {
+  const resp = await fetch(API.gastos);
+  const gastos = await resp.json();
+  const select = document.getElementById("filtro-banco");
+  const bancoSelecionado = select.value;
+  const bancos = [...new Set(gastos.map((g) => g.banco))].sort();
+
+  select.innerHTML = '<option value="">Todos os bancos</option>';
+  for (const banco of bancos) {
+    const opcao = document.createElement("option");
+    opcao.value = banco;
+    opcao.textContent = banco;
+    select.appendChild(opcao);
+  }
+  select.value = bancos.includes(bancoSelecionado) ? bancoSelecionado : "";
+}
+
 async function carregarGastos() {
   const query = montarQueryFiltros();
   const resp = await fetch(`${API.gastos}${query ? "?" + query : ""}`);
@@ -72,6 +89,90 @@ async function excluirGasto(id) {
   await Promise.all([carregarGastos(), carregarResumo()]);
 }
 
+function alternarCamposParcelas() {
+  const tipo = document.getElementById("gasto-tipo").value;
+  document.getElementById("grupo-parcelas").hidden = tipo !== "credito";
+}
+
+function abrirModal(titulo) {
+  document.getElementById("modal-titulo").textContent = titulo;
+  document.getElementById("form-erro").hidden = true;
+  document.getElementById("modal-gasto").hidden = false;
+}
+
+function fecharModal() {
+  document.getElementById("modal-gasto").hidden = true;
+  document.getElementById("form-gasto").reset();
+}
+
+function abrirModalParaCriar() {
+  document.getElementById("form-gasto").reset();
+  document.getElementById("gasto-id").value = "";
+  document.getElementById("gasto-data").value = new Date().toISOString().slice(0, 10);
+  alternarCamposParcelas();
+  abrirModal("Novo gasto");
+}
+
+async function abrirModalParaEditar(id) {
+  const resp = await fetch(API.gastos);
+  const gastos = await resp.json();
+  const gasto = gastos.find((g) => g.id === id);
+  if (!gasto) return;
+
+  document.getElementById("gasto-id").value = gasto.id;
+  document.getElementById("gasto-descricao").value = gasto.descricao;
+  document.getElementById("gasto-valor-total").value = gasto.valor_total;
+  document.getElementById("gasto-tipo").value = gasto.tipo;
+  document.getElementById("gasto-banco").value = gasto.banco;
+  document.getElementById("gasto-data").value = gasto.data;
+  document.getElementById("gasto-parcelas-total").value = gasto.parcelas_total;
+  document.getElementById("gasto-parcelas-pagas").value = gasto.parcelas_pagas;
+  document.getElementById("gasto-categoria").value = gasto.categoria || "";
+
+  alternarCamposParcelas();
+  abrirModal("Editar gasto");
+}
+
+function lerPayloadFormulario() {
+  return {
+    descricao: document.getElementById("gasto-descricao").value,
+    valor_total: parseFloat(document.getElementById("gasto-valor-total").value),
+    tipo: document.getElementById("gasto-tipo").value,
+    banco: document.getElementById("gasto-banco").value,
+    data: document.getElementById("gasto-data").value,
+    parcelas_total: parseInt(document.getElementById("gasto-parcelas-total").value || "1", 10),
+    parcelas_pagas: parseInt(document.getElementById("gasto-parcelas-pagas").value || "0", 10),
+    categoria: document.getElementById("gasto-categoria").value,
+  };
+}
+
+async function salvarGasto(evento) {
+  evento.preventDefault();
+  const id = document.getElementById("gasto-id").value;
+  const payload = lerPayloadFormulario();
+  const erroEl = document.getElementById("form-erro");
+  erroEl.hidden = true;
+
+  const url = id ? `${API.gastos}/${id}` : API.gastos;
+  const metodo = id ? "PUT" : "POST";
+
+  const resp = await fetch(url, {
+    method: metodo,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!resp.ok) {
+    const erro = await resp.json();
+    erroEl.textContent = erro.erro || "Não foi possível salvar o gasto.";
+    erroEl.hidden = false;
+    return;
+  }
+
+  fecharModal();
+  await Promise.all([carregarGastos(), carregarResumo(), carregarBancos()]);
+}
+
 async function carregarResumo() {
   const resp = await fetch(API.resumo);
   const resumo = await resp.json();
@@ -109,11 +210,19 @@ function inicializar() {
     if (!botao) return;
     if (botao.dataset.acao === "excluir") {
       excluirGasto(botao.dataset.id);
+    } else if (botao.dataset.acao === "editar") {
+      abrirModalParaEditar(botao.dataset.id);
     }
   });
 
+  document.getElementById("btn-novo-gasto").addEventListener("click", abrirModalParaCriar);
+  document.getElementById("btn-cancelar-modal").addEventListener("click", fecharModal);
+  document.getElementById("gasto-tipo").addEventListener("change", alternarCamposParcelas);
+  document.getElementById("form-gasto").addEventListener("submit", salvarGasto);
+
   carregarResumo();
   carregarGastos();
+  carregarBancos();
 }
 
 document.addEventListener("DOMContentLoaded", inicializar);
