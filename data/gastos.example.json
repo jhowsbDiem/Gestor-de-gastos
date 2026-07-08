@@ -1,0 +1,38 @@
+{
+  "salario": 5000.0,
+  "gastos": [
+    {
+      "id": "b1a7e2b0-1a2b-4c3d-9e4f-000000000001",
+      "descricao": "Notebook",
+      "valor_total": 3000.0,
+      "tipo": "credito",
+      "banco": "Nubank",
+      "data": "2026-05-10",
+      "parcelas_total": 10,
+      "parcelas_pagas": 3,
+      "categoria": "Eletrônicos"
+    },
+    {
+      "id": "b1a7e2b0-1a2b-4c3d-9e4f-000000000002",
+      "descricao": "Supermercado",
+      "valor_total": 350.5,
+      "tipo": "debito",
+      "banco": "Itaú",
+      "data": "2026-07-03",
+      "parcelas_total": 1,
+      "parcelas_pagas": 1,
+      "categoria": "Alimentação"
+    },
+    {
+      "id": "b1a7e2b0-1a2b-4c3d-9e4f-000000000003",
+      "descricao": "Aluguel",
+      "valor_total": 1200.0,
+      "tipo": "pix",
+      "banco": "Bradesco",
+      "data": "2026-07-05",
+      "parcelas_total": 1,
+      "parcelas_pagas": 1,
+      "categoria": "Moradia"
+    }
+  ]
+}

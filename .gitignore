@@ -1,0 +1,17 @@
+# Dados reais do usuário (nunca versionar)
+data/gastos.json
+
+# Repositório de referência (clonado apenas para consulta de padrão de README/commits)
+mastering-github-docs/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Editor / SO
+.vscode/
+.DS_Store
+Thumbs.db
