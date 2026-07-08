@@ -220,6 +220,9 @@ function inicializar() {
   document.getElementById("gasto-tipo").addEventListener("change", alternarCamposParcelas);
   document.getElementById("form-gasto").addEventListener("submit", salvarGasto);
 
+  document.getElementById("filtro-banco").addEventListener("change", carregarGastos);
+  document.getElementById("filtro-tipo").addEventListener("change", carregarGastos);
+
   carregarResumo();
   carregarGastos();
   carregarBancos();
