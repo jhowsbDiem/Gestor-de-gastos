@@ -1,0 +1,299 @@
+:root {
+  --cor-fundo: #f4f6f9;
+  --cor-superficie: #ffffff;
+  --cor-primaria: #2f6f4f;
+  --cor-primaria-escura: #245939;
+  --cor-texto: #1f2937;
+  --cor-texto-suave: #6b7280;
+  --cor-borda: #e5e7eb;
+  --cor-positivo: #2f6f4f;
+  --cor-negativo: #c0392b;
+  --raio: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+}
+
+.topo {
+  background: var(--cor-primaria);
+  color: white;
+  padding: 1.25rem 1.5rem;
+}
+
+.topo-titulo h1 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.5rem;
+}
+
+.data-hoje {
+  margin: 0;
+  opacity: 0.9;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.card {
+  background: var(--cor-superficie);
+  border-radius: var(--raio);
+  padding: 1rem 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.card-destaque {
+  border-left: 4px solid var(--cor-primaria);
+}
+
+.card-destaque.negativo {
+  border-left-color: var(--cor-negativo);
+}
+
+.card-label {
+  font-size: 0.8rem;
+  color: var(--cor-texto-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.card-valor {
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.salario-editavel {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.salario-editavel input {
+  width: 100%;
+  min-width: 0;
+  padding: 0.4rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.salario-editavel button {
+  padding: 0.4rem 0.6rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--cor-primaria);
+  color: white;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.filtros {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.filtros select,
+.import-export button {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-superficie);
+  cursor: pointer;
+}
+
+.import-export {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-primario {
+  background: var(--cor-primaria);
+  color: white;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-primario:hover {
+  background: var(--cor-primaria-escura);
+}
+
+.lista-gastos {
+  background: var(--cor-superficie);
+  border-radius: var(--raio);
+  padding: 0.5rem;
+  overflow-x: auto;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+}
+
+th, td {
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--cor-borda);
+  font-size: 0.9rem;
+}
+
+th {
+  color: var(--cor-texto-suave);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.badge {
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-credito { background: #fde8d7; color: #9a4b0f; }
+.badge-debito { background: #dbeafe; color: #1e4f9c; }
+.badge-pix { background: #dcfce7; color: #166534; }
+
+.acoes-linha {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.acoes-linha button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.lista-vazia {
+  text-align: center;
+  color: var(--cor-texto-suave);
+  padding: 1.5rem;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal[hidden] {
+  display: none;
+}
+
+.modal-conteudo {
+  background: var(--cor-superficie);
+  border-radius: var(--raio);
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-conteudo h2 {
+  margin-top: 0;
+}
+
+#form-gasto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+#form-gasto label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--cor-texto-suave);
+}
+
+#form-gasto input,
+#form-gasto select {
+  padding: 0.5rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 6px;
+  font-size: 1rem;
+  color: var(--cor-texto);
+}
+
+#grupo-parcelas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.form-erro {
+  color: var(--cor-negativo);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.modal-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.modal-acoes button {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--cor-borda);
+  cursor: pointer;
+  background: var(--cor-superficie);
+}
+
+@media (max-width: 640px) {
+  .acoes {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filtros, .import-export {
+    justify-content: stretch;
+  }
+
+  .filtros select, .import-export button {
+    flex: 1;
+  }
+}

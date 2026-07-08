@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestor de Gastos Pessoais</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <header class="topo">
+    <div class="topo-titulo">
+      <h1>💰 Gestor de Gastos</h1>
+      <p class="data-hoje">Hoje é <strong>{{ hoje }}</strong></p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="dashboard">
+      <div class="card">
+        <span class="card-label">Salário</span>
+        <div class="salario-editavel">
+          <span>R$</span>
+          <input type="number" id="input-salario" step="0.01" min="0" />
+          <button id="btn-salvar-salario" title="Salvar salário">Salvar</button>
+        </div>
+      </div>
+      <div class="card">
+        <span class="card-label">Gasto no mês</span>
+        <span class="card-valor" id="resumo-total-gasto-mes">R$ 0,00</span>
+      </div>
+      <div class="card">
+        <span class="card-label">Falta pagar em parcelas</span>
+        <span class="card-valor" id="resumo-total-a-pagar">R$ 0,00</span>
+      </div>
+      <div class="card">
+        <span class="card-label">Parcelas restantes</span>
+        <span class="card-valor" id="resumo-parcelas-faltando">0</span>
+      </div>
+      <div class="card card-destaque" id="card-sobra">
+        <span class="card-label">Sobra do salário</span>
+        <span class="card-valor" id="resumo-sobra-salario">R$ 0,00</span>
+      </div>
+    </section>
+
+    <section class="acoes">
+      <button id="btn-novo-gasto" class="btn-primario">+ Novo gasto</button>
+
+      <div class="filtros">
+        <select id="filtro-banco">
+          <option value="">Todos os bancos</option>
+        </select>
+        <select id="filtro-tipo">
+          <option value="">Todos os tipos</option>
+          <option value="credito">Crédito</option>
+          <option value="debito">Débito</option>
+          <option value="pix">Pix</option>
+        </select>
+      </div>
+
+      <div class="import-export">
+        <button id="btn-exportar" title="Baixar backup em JSON">⬇ Exportar</button>
+        <button id="btn-importar" title="Carregar backup em JSON">⬆ Importar</button>
+        <input type="file" id="input-importar" accept="application/json" hidden />
+      </div>
+    </section>
+
+    <section class="lista-gastos">
+      <table>
+        <thead>
+          <tr>
+            <th>Descrição</th>
+            <th>Tipo</th>
+            <th>Banco</th>
+            <th>Valor total</th>
+            <th>Parcela</th>
+            <th>Faltam</th>
+            <th>Categoria</th>
+            <th>Data</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tabela-gastos-corpo">
+        </tbody>
+      </table>
+      <p id="lista-vazia" class="lista-vazia" hidden>Nenhum gasto cadastrado ainda.</p>
+    </section>
+  </main>
+
+  <div id="modal-gasto" class="modal" hidden>
+    <div class="modal-conteudo">
+      <h2 id="modal-titulo">Novo gasto</h2>
+      <form id="form-gasto">
+        <input type="hidden" id="gasto-id" />
+
+        <label>Descrição
+          <input type="text" id="gasto-descricao" required />
+        </label>
+
+        <label>Valor total (R$)
+          <input type="number" id="gasto-valor-total" step="0.01" min="0.01" required />
+        </label>
+
+        <label>Tipo
+          <select id="gasto-tipo" required>
+            <option value="credito">Crédito</option>
+            <option value="debito">Débito</option>
+            <option value="pix">Pix</option>
+          </select>
+        </label>
+
+        <label>Banco
+          <input type="text" id="gasto-banco" required />
+        </label>
+
+        <label>Data
+          <input type="date" id="gasto-data" required />
+        </label>
+
+        <div id="grupo-parcelas">
+          <label>Nº de parcelas
+            <input type="number" id="gasto-parcelas-total" min="1" step="1" value="1" />
+          </label>
+          <label>Parcelas já pagas
+            <input type="number" id="gasto-parcelas-pagas" min="0" step="1" value="0" />
+          </label>
+        </div>
+
+        <label>Categoria (opcional)
+          <input type="text" id="gasto-categoria" />
+        </label>
+
+        <p class="form-erro" id="form-erro" hidden></p>
+
+        <div class="modal-acoes">
+          <button type="button" id="btn-cancelar-modal">Cancelar</button>
+          <button type="submit" class="btn-primario">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
