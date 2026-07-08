@@ -3,6 +3,8 @@ const API = {
   resumo: "/api/resumo",
   salario: "/api/salario",
   gastos: "/api/gastos",
+  export: "/api/export",
+  import: "/api/import",
 };
 
 const ROTULOS_TIPO = { credito: "Crédito", debito: "Débito", pix: "Pix" };
@@ -202,6 +204,44 @@ async function salvarSalario() {
   await carregarResumo();
 }
 
+async function exportarDados() {
+  const resp = await fetch(API.export);
+  const dados = await resp.json();
+  const blob = new Blob([JSON.stringify(dados, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `gastos-${new Date().toISOString().slice(0, 10)}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+async function importarDados(arquivo) {
+  const texto = await arquivo.text();
+  let dados;
+  try {
+    dados = JSON.parse(texto);
+  } catch {
+    alert("Arquivo inválido: não é um JSON válido.");
+    return;
+  }
+
+  const resp = await fetch(API.import, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(dados),
+  });
+
+  if (!resp.ok) {
+    const erro = await resp.json();
+    alert(erro.erro || "Não foi possível importar o arquivo.");
+    return;
+  }
+
+  await Promise.all([carregarGastos(), carregarResumo(), carregarBancos()]);
+}
+
 function inicializar() {
   document.getElementById("btn-salvar-salario").addEventListener("click", salvarSalario);
 
@@ -222,6 +262,16 @@ function inicializar() {
 
   document.getElementById("filtro-banco").addEventListener("change", carregarGastos);
   document.getElementById("filtro-tipo").addEventListener("change", carregarGastos);
+
+  document.getElementById("btn-exportar").addEventListener("click", exportarDados);
+  document.getElementById("btn-importar").addEventListener("click", () => {
+    document.getElementById("input-importar").click();
+  });
+  document.getElementById("input-importar").addEventListener("change", (evento) => {
+    const [arquivo] = evento.target.files;
+    if (arquivo) importarDados(arquivo);
+    evento.target.value = "";
+  });
 
   carregarResumo();
   carregarGastos();
