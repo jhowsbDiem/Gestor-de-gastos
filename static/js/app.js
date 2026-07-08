@@ -13,6 +13,12 @@ function formatarMoeda(valor) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+function escaparHtml(texto) {
+  const div = document.createElement("div");
+  div.textContent = texto;
+  return div.innerHTML;
+}
+
 function formatarDataBr(dataIso) {
   if (!dataIso) return "—";
   const [ano, mes, dia] = dataIso.split("-");
@@ -68,13 +74,13 @@ function renderizarTabela(gastos) {
         : "à vista";
 
     linha.innerHTML = `
-      <td>${gasto.descricao}</td>
+      <td>${escaparHtml(gasto.descricao)}</td>
       <td><span class="badge badge-${gasto.tipo}">${ROTULOS_TIPO[gasto.tipo]}</span></td>
-      <td>${gasto.banco}</td>
+      <td>${escaparHtml(gasto.banco)}</td>
       <td>${formatarMoeda(gasto.valor_total)}</td>
       <td>${formatarMoeda(gasto.valor_parcela)}</td>
       <td>${gasto.tipo === "credito" ? parcelaTexto : "—"}</td>
-      <td>${gasto.categoria || "—"}</td>
+      <td>${escaparHtml(gasto.categoria || "—")}</td>
       <td>${formatarDataBr(gasto.data)}</td>
       <td class="acoes-linha">
         <button title="Editar" data-acao="editar" data-id="${gasto.id}">✏️</button>
