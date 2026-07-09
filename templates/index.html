@@ -33,8 +33,12 @@
         <span class="card-valor" id="resumo-total-a-pagar">R$ 0,00</span>
       </div>
       <div class="card">
-        <span class="card-label">Parcelas restantes</span>
-        <span class="card-valor" id="resumo-parcelas-faltando">0</span>
+        <span class="card-label">Meta de investimento</span>
+        <div class="salario-editavel">
+          <span>R$</span>
+          <input type="number" id="input-meta-investimento" step="0.01" min="0" />
+          <button id="btn-salvar-meta-investimento" title="Salvar meta de investimento">Salvar</button>
+        </div>
       </div>
       <div class="card card-destaque" id="card-sobra">
         <span class="card-label">Sobra do salário</span>

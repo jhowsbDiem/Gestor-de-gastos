@@ -19,7 +19,7 @@ def _garantir_arquivo_dados():
         if origem:
             shutil.copyfile(origem, DATA_FILE)
         else:
-            _salvar({"salario": 0.0, "gastos": []})
+            _salvar({"salario": 0.0, "meta_investimento": 0.0, "gastos": []})
 
 
 def _carregar():
@@ -97,6 +97,19 @@ def definir_salario(valor):
     dados["salario"] = valor
     _salvar(dados)
     return dados["salario"]
+
+
+def obter_meta_investimento():
+    return _carregar().get("meta_investimento", 0.0)
+
+
+def definir_meta_investimento(valor):
+    if valor < 0:
+        raise ValueError("Meta de investimento não pode ser negativa.")
+    dados = _carregar()
+    dados["meta_investimento"] = valor
+    _salvar(dados)
+    return dados["meta_investimento"]
 
 
 def _validar_gasto(payload):
@@ -200,7 +213,6 @@ def calcular_resumo():
 
     total_gasto_mes = 0.0
     total_a_pagar_parcelas = 0.0
-    parcelas_faltando_total = 0
     compromisso_mes_atual = 0.0
 
     for g in gastos:
@@ -208,7 +220,6 @@ def calcular_resumo():
 
         if g["tipo"] == "credito":
             total_a_pagar_parcelas += g["valor_restante"]
-            parcelas_faltando_total += g["parcelas_faltantes"]
             if g["parcelas_faltantes"] > 0:
                 compromisso_mes_atual += g["valor_parcela"]
             if ano_g == ano_atual and mes_g == mes_atual:
@@ -224,7 +235,7 @@ def calcular_resumo():
         "salario": salario,
         "total_gasto_mes": round(total_gasto_mes, 2),
         "total_a_pagar_parcelas": round(total_a_pagar_parcelas, 2),
-        "parcelas_faltando_total": parcelas_faltando_total,
+        "meta_investimento": dados.get("meta_investimento", 0.0),
         "sobra_salario": sobra_salario,
     }
 

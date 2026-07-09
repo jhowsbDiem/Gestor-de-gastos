@@ -4,6 +4,9 @@ data/gastos.json
 # Repositório de referência (clonado apenas para consulta de padrão de README/commits)
 mastering-github-docs/
 
+# Prompt original usado para gerar o projeto (não faz parte da aplicação)
+prompt-gestor-de-gastos.md
+
 # Python
 __pycache__/
 *.pyc

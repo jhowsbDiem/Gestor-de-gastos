@@ -32,6 +32,20 @@ def api_salario():
     return jsonify({"salario": novo_salario})
 
 
+@app.route("/api/meta-investimento", methods=["GET", "PUT"])
+def api_meta_investimento():
+    if request.method == "GET":
+        return jsonify({"meta_investimento": models.obter_meta_investimento()})
+
+    payload = request.get_json(silent=True) or {}
+    try:
+        valor = float(payload.get("meta_investimento"))
+        nova_meta = models.definir_meta_investimento(valor)
+    except (TypeError, ValueError) as erro:
+        return jsonify({"erro": str(erro) or "Valor de meta de investimento inválido."}), 400
+    return jsonify({"meta_investimento": nova_meta})
+
+
 @app.route("/api/gastos", methods=["GET", "POST"])
 def api_gastos():
     if request.method == "GET":

@@ -1,5 +1,6 @@
 {
   "salario": 5000.0,
+  "meta_investimento": 500.0,
   "gastos": [
     {
       "id": "b1a7e2b0-1a2b-4c3d-9e4f-000000000001",

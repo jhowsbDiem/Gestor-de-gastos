@@ -2,6 +2,7 @@
 const API = {
   resumo: "/api/resumo",
   salario: "/api/salario",
+  metaInvestimento: "/api/meta-investimento",
   gastos: "/api/gastos",
   export: "/api/export",
   import: "/api/import",
@@ -186,9 +187,9 @@ async function carregarResumo() {
   const resumo = await resp.json();
 
   document.getElementById("input-salario").value = resumo.salario;
+  document.getElementById("input-meta-investimento").value = resumo.meta_investimento;
   document.getElementById("resumo-total-gasto-mes").textContent = formatarMoeda(resumo.total_gasto_mes);
   document.getElementById("resumo-total-a-pagar").textContent = formatarMoeda(resumo.total_a_pagar_parcelas);
-  document.getElementById("resumo-parcelas-faltando").textContent = resumo.parcelas_faltando_total;
 
   const elSobra = document.getElementById("resumo-sobra-salario");
   elSobra.textContent = formatarMoeda(resumo.sobra_salario);
@@ -206,6 +207,21 @@ async function salvarSalario() {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ salario: valor }),
+  });
+  await carregarResumo();
+}
+
+async function salvarMetaInvestimento() {
+  const input = document.getElementById("input-meta-investimento");
+  const valor = parseFloat(input.value);
+  if (Number.isNaN(valor) || valor < 0) {
+    alert("Informe uma meta de investimento válida.");
+    return;
+  }
+  await fetch(API.metaInvestimento, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ meta_investimento: valor }),
   });
   await carregarResumo();
 }
@@ -250,6 +266,7 @@ async function importarDados(arquivo) {
 
 function inicializar() {
   document.getElementById("btn-salvar-salario").addEventListener("click", salvarSalario);
+  document.getElementById("btn-salvar-meta-investimento").addEventListener("click", salvarMetaInvestimento);
 
   document.getElementById("tabela-gastos-corpo").addEventListener("click", (evento) => {
     const botao = evento.target.closest("button[data-acao]");
