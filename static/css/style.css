@@ -280,6 +280,9 @@ th {
   border-radius: 6px;
   border: 1px solid var(--cor-borda);
   cursor: pointer;
+}
+
+.modal-acoes button:not(.btn-primario) {
   background: var(--cor-superficie);
 }
 
