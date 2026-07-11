@@ -216,15 +216,16 @@ def calcular_resumo():
     compromisso_mes_atual = 0.0
 
     for g in gastos:
-        ano_g, mes_g, _ = (int(p) for p in g["data"].split("-"))
-
         if g["tipo"] == "credito":
             total_a_pagar_parcelas += g["valor_restante"]
-            if g["parcelas_faltantes"] > 0:
-                compromisso_mes_atual += g["valor_parcela"]
-            if ano_g == ano_atual and mes_g == mes_atual:
-                total_gasto_mes += g["valor_parcela"]
+            vencimento = g["proxima_data_vencimento"]
+            if vencimento:
+                ano_v, mes_v, _ = (int(p) for p in vencimento.split("-"))
+                if ano_v == ano_atual and mes_v == mes_atual:
+                    total_gasto_mes += g["valor_parcela"]
+                    compromisso_mes_atual += g["valor_parcela"]
         else:
+            ano_g, mes_g, _ = (int(p) for p in g["data"].split("-"))
             if ano_g == ano_atual and mes_g == mes_atual:
                 total_gasto_mes += g["valor_total"]
                 compromisso_mes_atual += g["valor_total"]
