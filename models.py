@@ -21,6 +21,16 @@ CATEGORIAS_VALIDAS = (
     "LAZER",              # Gastos não essenciais: lazer, entretenimento, compras discricionárias.
 )
 
+# Percentual fixo do salário destinado a cada categoria — não editável pelo
+# usuário nesta fase. Soma sempre 100% do salário.
+PERCENTUAIS_LIMITE_CATEGORIA = {
+    "INVESTIMENTO": 0.25,
+    "GASTO_FIXO_CASA": 0.25,
+    "MERCADO_ESSENCIAL": 0.25,
+    "EMERGENCIA": 0.10,
+    "LAZER": 0.15,
+}
+
 
 def _garantir_arquivo_dados():
     os.makedirs(DATA_DIR, exist_ok=True)
@@ -217,6 +227,14 @@ def excluir_gasto(gasto_id):
     _salvar(dados)
 
 
+def calcular_limites_categoria(salario):
+    """Limite de gasto de cada categoria, na proporção fixa do salário informado."""
+    return {
+        categoria: round(salario * percentual, 2)
+        for categoria, percentual in PERCENTUAIS_LIMITE_CATEGORIA.items()
+    }
+
+
 def calcular_resumo():
     dados = _carregar()
     salario = dados["salario"]
@@ -250,6 +268,7 @@ def calcular_resumo():
         "total_a_pagar_parcelas": round(total_a_pagar_parcelas, 2),
         "meta_investimento": dados.get("meta_investimento", 0.0),
         "sobra_salario": sobra_salario,
+        "limites_categoria": calcular_limites_categoria(salario),
     }
 
 
