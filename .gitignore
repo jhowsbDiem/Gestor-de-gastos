@@ -1,8 +1,8 @@
 # Dados reais do usuário (nunca versionar)
 data/gastos.json
 
-# Repositório de referência (clonado apenas para consulta de padrão de README/commits)
-mastering-github-docs/
+# Excalidraw
+SystemDesign/
 
 # Prompt original usado para gerar o projeto (não faz parte da aplicação)
 prompt-gestor-de-gastos.md

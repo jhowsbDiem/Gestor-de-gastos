@@ -11,6 +11,16 @@ EXAMPLE_FILE = os.path.join(DATA_DIR, "gastos.example.json")
 
 TIPOS_VALIDOS = ("credito", "debito", "pix")
 
+# Categorias fixas do gasto — base do motor de peso/limite/cascata do orçamento.
+# Todo gasto pertence a exatamente uma delas; nenhum outro valor é aceito.
+CATEGORIAS_VALIDAS = (
+    "INVESTIMENTO",       # Aportes e reservas (poupança, investimentos, previdência).
+    "GASTO_FIXO_CASA",    # Despesas fixas de moradia: aluguel, financiamento, contas da casa.
+    "MERCADO_ESSENCIAL",  # Compras essenciais de mercado e alimentação do dia a dia.
+    "EMERGENCIA",         # Gastos emergenciais e imprevistos.
+    "LAZER",              # Gastos não essenciais: lazer, entretenimento, compras discricionárias.
+)
+
 
 def _garantir_arquivo_dados():
     os.makedirs(DATA_DIR, exist_ok=True)
@@ -122,6 +132,8 @@ def _validar_gasto(payload):
         erros.append("Banco é obrigatório.")
     if not payload.get("data"):
         erros.append("Data é obrigatória.")
+    if payload.get("categoria") not in CATEGORIAS_VALIDAS:
+        erros.append("Categoria deve ser uma das opções válidas: " + ", ".join(CATEGORIAS_VALIDAS) + ".")
     try:
         if float(payload.get("valor_total", -1)) <= 0:
             erros.append("Valor total deve ser positivo.")
@@ -163,7 +175,7 @@ def criar_gasto(payload):
         "data": payload["data"],
         "parcelas_total": parcelas_total,
         "parcelas_pagas": parcelas_pagas,
-        "categoria": payload.get("categoria", "").strip(),
+        "categoria": payload["categoria"],
     }
     dados = _carregar()
     dados["gastos"].append(gasto)
@@ -188,7 +200,7 @@ def atualizar_gasto(gasto_id, payload):
                     "data": payload["data"],
                     "parcelas_total": parcelas_total,
                     "parcelas_pagas": parcelas_pagas,
-                    "categoria": payload.get("categoria", "").strip(),
+                    "categoria": payload["categoria"],
                 }
             )
             _salvar(dados)

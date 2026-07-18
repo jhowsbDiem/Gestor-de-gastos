@@ -93,13 +93,14 @@ Na primeira execução, se `data/gastos.json` ainda não existir, ele é criado 
       "data": "2026-07-08",
       "parcelas_total": 10,
       "parcelas_pagas": 3,
-      "categoria": "Eletrônicos"
+      "categoria": "LAZER"
     }
   ]
 }
 ```
 
 - `tipo` aceita `"credito"`, `"debito"` ou `"pix"`. Débito e Pix sempre usam `parcelas_total = 1`.
+- `categoria` aceita `"INVESTIMENTO"`, `"GASTO_FIXO_CASA"`, `"MERCADO_ESSENCIAL"`, `"EMERGENCIA"` ou `"LAZER"` — base para o motor de peso/limite de orçamento.
 - Campos **derivados** (calculados pelo backend a cada requisição, nunca salvos no arquivo): `valor_parcela`, `parcelas_faltantes`, `valor_restante` e `proxima_data_vencimento`.
 - Valores em Reais (R$); datas armazenadas em `aaaa-mm-dd` e exibidas na interface em `dd/mm/aaaa`.
 

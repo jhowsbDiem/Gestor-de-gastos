@@ -10,6 +10,14 @@ const API = {
 
 const ROTULOS_TIPO = { credito: "Crédito", debito: "Débito", pix: "Pix" };
 
+const ROTULOS_CATEGORIA = {
+  INVESTIMENTO: "Investimento",
+  GASTO_FIXO_CASA: "Gasto fixo da casa",
+  MERCADO_ESSENCIAL: "Mercado essencial",
+  EMERGENCIA: "Emergência",
+  LAZER: "Lazer",
+};
+
 function formatarMoeda(valor) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
@@ -81,7 +89,7 @@ function renderizarTabela(gastos) {
       <td>${formatarMoeda(gasto.valor_total)}</td>
       <td>${formatarMoeda(gasto.valor_parcela)}</td>
       <td>${gasto.tipo === "credito" ? parcelaTexto : "—"}</td>
-      <td>${escaparHtml(gasto.categoria || "—")}</td>
+      <td>${ROTULOS_CATEGORIA[gasto.categoria] || "—"}</td>
       <td>${formatarDataBr(gasto.data)}</td>
       <td class="acoes-linha">
         <button title="Editar" data-acao="editar" data-id="${gasto.id}">✏️</button>

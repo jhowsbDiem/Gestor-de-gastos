@@ -129,8 +129,15 @@
           </label>
         </div>
 
-        <label>Categoria (opcional)
-          <input type="text" id="gasto-categoria" />
+        <label>Categoria
+          <select id="gasto-categoria" required>
+            <option value="" disabled selected>Selecione...</option>
+            <option value="INVESTIMENTO">Investimento</option>
+            <option value="GASTO_FIXO_CASA">Gasto fixo da casa</option>
+            <option value="MERCADO_ESSENCIAL">Mercado essencial</option>
+            <option value="EMERGENCIA">Emergência</option>
+            <option value="LAZER">Lazer</option>
+          </select>
         </label>
 
         <p class="form-erro" id="form-erro" hidden></p>

@@ -11,7 +11,7 @@
       "data": "2026-05-10",
       "parcelas_total": 10,
       "parcelas_pagas": 3,
-      "categoria": "Eletrônicos"
+      "categoria": "LAZER"
     },
     {
       "id": "b1a7e2b0-1a2b-4c3d-9e4f-000000000002",
@@ -22,7 +22,7 @@
       "data": "2026-07-03",
       "parcelas_total": 1,
       "parcelas_pagas": 1,
-      "categoria": "Alimentação"
+      "categoria": "MERCADO_ESSENCIAL"
     },
     {
       "id": "b1a7e2b0-1a2b-4c3d-9e4f-000000000003",
@@ -33,7 +33,7 @@
       "data": "2026-07-05",
       "parcelas_total": 1,
       "parcelas_pagas": 1,
-      "categoria": "Moradia"
+      "categoria": "GASTO_FIXO_CASA"
     }
   ]
 }
