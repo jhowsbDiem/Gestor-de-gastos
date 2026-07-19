@@ -24,8 +24,8 @@ CATEGORIAS_VALIDAS = (
 # Percentual fixo do salário destinado a cada categoria — não editável pelo
 # usuário nesta fase. Soma sempre 100% do salário.
 PERCENTUAIS_LIMITE_CATEGORIA = {
-    "INVESTIMENTO": 0.25,
-    "GASTO_FIXO_CASA": 0.25,
+    "INVESTIMENTO": 0.20,
+    "GASTO_FIXO_CASA": 0.30,
     "MERCADO_ESSENCIAL": 0.25,
     "EMERGENCIA": 0.10,
     "LAZER": 0.15,
