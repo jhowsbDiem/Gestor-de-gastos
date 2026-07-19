@@ -269,19 +269,144 @@ def calcular_limites_categoria(salario):
     }
 
 
-def _avancar_rollover_emergencia(dados, gastos, ano_atual, mes_atual):
-    """Fecha, um mês de cada vez, o saldo acumulado de Emergência até alcançar
-    o mês atual. Cada mês fechado soma permanentemente ao acumulado (limite -
-    usado daquele mês); não há reposição automática, só o que sobrou (ou
-    faltou) mês a mês. Retorna True se `dados` foi alterado (precisa persistir).
+# Ordem em que categorias com déficit disputam as fontes de cascata dentro do
+# mesmo mês — a issue não define prioridade entre elas, então a ordem é fixa
+# e determinística (não a ordem de fallback dentro de uma categoria, que é
+# sempre Lazer -> Emergência mês -> Emergência acumulado).
+ORDEM_GATILHO_CASCATA = ("GASTO_FIXO_CASA", "MERCADO_ESSENCIAL", "EMERGENCIA")
 
-    Usa o salário atual pra estimar o limite de meses passados, já que não
+
+def _valor_no_mes(gasto):
+    return gasto["valor_parcela"] if gasto["tipo"] == "credito" else gasto["valor_total"]
+
+
+def _gastos_da_categoria_no_mes_ordenados(gastos, categoria, ano, mes):
+    """Gastos de uma categoria com valor no mês informado, em ordem
+    cronológica de compra — define a ordem de atribuição da cascata quando
+    vários gastos disputam a mesma fonte no mesmo mês."""
+    relevantes = [
+        g for g in gastos
+        if g["categoria"] == categoria and (
+            _parcela_vence_no_mes(g, ano, mes) if g["tipo"] == "credito"
+            else g["data"][:7] == f"{ano:04d}-{mes:02d}"
+        )
+    ]
+    return sorted(relevantes, key=lambda g: g["data"])
+
+
+def _calcular_cascata_mes(gastos, ano, mes, limites, saldo_acumulado_emergencia):
+    """Calcula, sem persistir nada, como a cascata cobriria os déficits de
+    Gasto Fixo Casa, Mercado Essencial e Emergência num mês. Investimento
+    nunca participa (nem gatilho nem fonte); Emergência, quando é o gatilho,
+    só pode puxar de Lazer, nunca de si mesma.
+
+    Retorna as alocações por gasto (pra registrar rastreabilidade), o resumo
+    de déficit/cobertura por categoria, e quanto foi consumido de cada nível
+    da Emergência (pra quem for fechar o mês decidir o que persistir).
+    """
+    usado = {cat: _usado_categoria_mes(gastos, cat, ano, mes) for cat in CATEGORIAS_VALIDAS}
+
+    pool_lazer = max(0.0, limites["LAZER"] - usado["LAZER"])
+    pool_emergencia_mes = max(0.0, limites["EMERGENCIA"] - usado["EMERGENCIA"])
+    pool_emergencia_acumulado = max(0.0, saldo_acumulado_emergencia)
+
+    consumo_emergencia_mes_por_outras = 0.0
+    consumo_emergencia_acumulado = 0.0
+    alocacoes = {}
+    resumo = {}
+    mes_rotulo = f"{ano:04d}-{mes:02d}"
+
+    for categoria in ORDEM_GATILHO_CASCATA:
+        deficit_total = round(usado[categoria] - limites[categoria], 2)
+        resumo[categoria] = {"deficit": max(0.0, deficit_total), "coberto": 0.0, "nao_coberto": 0.0}
+        if deficit_total <= 0:
+            continue
+
+        pode_usar_emergencia = categoria != "EMERGENCIA"
+        usado_acumulado = 0.0
+        coberto_total = 0.0
+
+        for gasto in _gastos_da_categoria_no_mes_ordenados(gastos, categoria, ano, mes):
+            deficit_antes = max(0.0, usado_acumulado - limites[categoria])
+            usado_acumulado += _valor_no_mes(gasto)
+            deficit_depois = max(0.0, usado_acumulado - limites[categoria])
+            fatia = round(deficit_depois - deficit_antes, 2)
+            if fatia <= 0:
+                continue
+
+            restante = fatia
+            eventos = []
+
+            usar = round(min(restante, pool_lazer), 2)
+            if usar > 0:
+                pool_lazer -= usar
+                restante -= usar
+                eventos.append({"mes": mes_rotulo, "origem": "LAZER", "nivel": "mes", "valor": usar})
+
+            if restante > 0 and pode_usar_emergencia:
+                usar = round(min(restante, pool_emergencia_mes), 2)
+                if usar > 0:
+                    pool_emergencia_mes -= usar
+                    consumo_emergencia_mes_por_outras += usar
+                    restante -= usar
+                    eventos.append({"mes": mes_rotulo, "origem": "EMERGENCIA", "nivel": "mes", "valor": usar})
+
+            if restante > 0 and pode_usar_emergencia:
+                usar = round(min(restante, pool_emergencia_acumulado), 2)
+                if usar > 0:
+                    pool_emergencia_acumulado -= usar
+                    consumo_emergencia_acumulado += usar
+                    restante -= usar
+                    eventos.append({"mes": mes_rotulo, "origem": "EMERGENCIA", "nivel": "acumulado", "valor": usar})
+
+            if eventos:
+                alocacoes.setdefault(gasto["id"], []).extend(eventos)
+            coberto_total += fatia - restante
+
+        resumo[categoria]["coberto"] = round(coberto_total, 2)
+        resumo[categoria]["nao_coberto"] = round(deficit_total - coberto_total, 2)
+
+    return {
+        "alocacoes": alocacoes,
+        "resumo_por_categoria": resumo,
+        "consumo_emergencia_mes_por_outras": round(consumo_emergencia_mes_por_outras, 2),
+        "consumo_emergencia_acumulado": round(consumo_emergencia_acumulado, 2),
+        "pool_emergencia_mes_inicial": round(max(0.0, limites["EMERGENCIA"] - usado["EMERGENCIA"]), 2),
+    }
+
+
+def _fechar_mes(dados, gastos, ano, mes):
+    """Fecha um mês definitivamente: aplica a cascata calculada nos gastos
+    daquele mês (persistindo a origem em `cascata`) e ajusta o acumulado de
+    Emergência. A contribuição própria da Emergência pro acumulado nunca é
+    negativa — se ela mesma estourou, o rombo foi coberto por Lazer (ou ficou
+    descoberto), nunca pelo próprio acumulado."""
+    limites = calcular_limites_categoria(dados["salario"])
+    saldo_acumulado_antes = dados.get("saldo_acumulado_emergencia", 0.0)
+    resultado = _calcular_cascata_mes(gastos, ano, mes, limites, saldo_acumulado_antes)
+
+    for gasto in dados["gastos"]:
+        eventos = resultado["alocacoes"].get(gasto["id"])
+        if eventos:
+            gasto.setdefault("cascata", []).extend(eventos)
+
+    contribuicao_propria = resultado["pool_emergencia_mes_inicial"] - resultado["consumo_emergencia_mes_por_outras"]
+    novo_acumulado = saldo_acumulado_antes + contribuicao_propria - resultado["consumo_emergencia_acumulado"]
+    dados["saldo_acumulado_emergencia"] = round(novo_acumulado, 2)
+
+
+def _avancar_fechamento_mensal(dados, gastos, ano_atual, mes_atual):
+    """Fecha, um mês de cada vez, todo mês pendente até alcançar o mês atual
+    (cascata + acumulado de Emergência). Retorna True se `dados` foi alterado
+    (precisa persistir).
+
+    Usa o salário atual pra estimar limites de meses passados, já que não
     existe histórico de salário por mês — simplificação aceitável pra um app
     pessoal de um usuário só.
     """
-    ultimo = dados.get("ultimo_mes_rollover_emergencia")
+    ultimo = dados.get("ultimo_mes_fechado")
     if ultimo is None:
-        dados["ultimo_mes_rollover_emergencia"] = f"{ano_atual:04d}-{mes_atual:02d}"
+        dados["ultimo_mes_fechado"] = f"{ano_atual:04d}-{mes_atual:02d}"
         dados.setdefault("saldo_acumulado_emergencia", 0.0)
         return True
 
@@ -289,28 +414,29 @@ def _avancar_rollover_emergencia(dados, gastos, ano_atual, mes_atual):
     if (ano_r, mes_r) >= (ano_atual, mes_atual):
         return False
 
-    limite_emergencia = calcular_limites_categoria(dados["salario"])["EMERGENCIA"]
-    acumulado = dados.get("saldo_acumulado_emergencia", 0.0)
     while (ano_r, mes_r) < (ano_atual, mes_atual):
-        usado = _usado_categoria_mes(gastos, "EMERGENCIA", ano_r, mes_r)
-        acumulado += limite_emergencia - usado
+        _fechar_mes(dados, gastos, ano_r, mes_r)
         ano_r, mes_r = _mes_seguinte(ano_r, mes_r)
 
-    dados["saldo_acumulado_emergencia"] = round(acumulado, 2)
-    dados["ultimo_mes_rollover_emergencia"] = f"{ano_r:04d}-{mes_r:02d}"
+    dados["ultimo_mes_fechado"] = f"{ano_r:04d}-{mes_r:02d}"
     return True
 
 
 def calcular_saldos_categoria():
     """Motor central de orçamento: limite, usado e disponível de cada
     categoria no mês atual. Emergência também carrega `saldo_acumulado`, a
-    reserva que fecha mês a mês (ver `_avancar_rollover_emergencia`)."""
+    reserva que fecha mês a mês. Gasto Fixo Casa, Mercado Essencial e
+    Emergência carregam `cascata_previa`: como a cascata cobriria o déficit
+    se o mês fechasse agora — cálculo ao vivo, não persistido (só vira
+    definitivo, com rastreabilidade por gasto, quando o mês realmente fecha).
+    """
     dados = _carregar()
     gastos = [calcular_derivados(g) for g in dados["gastos"]]
     ano_atual, mes_atual = _mes_atual()
 
-    if _avancar_rollover_emergencia(dados, gastos, ano_atual, mes_atual):
+    if _avancar_fechamento_mensal(dados, gastos, ano_atual, mes_atual):
         _salvar(dados)
+        gastos = [calcular_derivados(g) for g in dados["gastos"]]
 
     limites = calcular_limites_categoria(dados["salario"])
     saldos = {}
@@ -323,7 +449,13 @@ def calcular_saldos_categoria():
             "disponivel": round(limite - usado, 2),
         }
 
-    saldos["EMERGENCIA"]["saldo_acumulado"] = dados.get("saldo_acumulado_emergencia", 0.0)
+    saldo_acumulado = dados.get("saldo_acumulado_emergencia", 0.0)
+    saldos["EMERGENCIA"]["saldo_acumulado"] = saldo_acumulado
+
+    previa = _calcular_cascata_mes(gastos, ano_atual, mes_atual, limites, saldo_acumulado)
+    for categoria in ORDEM_GATILHO_CASCATA:
+        saldos[categoria]["cascata_previa"] = previa["resumo_por_categoria"][categoria]
+
     return saldos
 
 
