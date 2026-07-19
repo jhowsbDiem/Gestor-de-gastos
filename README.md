@@ -6,8 +6,6 @@
 
 Painel web local para controlar salário, gastos de **crédito parcelado**, **débito** e **Pix**, saber quanto ainda falta pagar de parcelas e quanto sobra do salário no mês. Todos os dados ficam em um arquivo **JSON no seu disco** — nada é enviado para nuvem ou banco de dados externo.
 
-![Tela principal do Gestor de Gastos](docs/screenshot.png)
-
 ---
 
 ## 📌 Principais funcionalidades
@@ -118,8 +116,6 @@ Na primeira execução, se `data/gastos.json` ainda não existir, ele é criado 
 
 ## 📸 Screenshots
 
-_Espaço reservado para prints do dashboard e da lista de gastos._
+![Tela principal do Gestor de Gastos](docs/screenshot.png)
 
 ---
-
-Desenvolvido para uso pessoal, seguindo o padrão de documentação e commits de [mastering-github-docs](https://github.com/jhowsbDiem/mastering-github-docs).

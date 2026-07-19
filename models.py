@@ -67,6 +67,40 @@ def _somar_meses(data_iso, meses):
     return date(novo_ano, novo_mes, 1)
 
 
+def _mes_seguinte(ano, mes):
+    return (ano + 1, 1) if mes == 12 else (ano, mes + 1)
+
+
+def _parcela_vence_no_mes(gasto, ano, mes):
+    """Verifica se alguma parcela do gasto estava agendada pra vencer no mês
+    informado. Usa a data de compra + índice da parcela, não `parcelas_pagas`
+    — assim funciona pra meses passados independente do estado atual de
+    pagamento, necessário pro rollover histórico da Emergência."""
+    if gasto["tipo"] != "credito":
+        return False
+    for indice in range(gasto["parcelas_total"]):
+        vencimento = _somar_meses(gasto["data"], indice)
+        if vencimento.year == ano and vencimento.month == mes:
+            return True
+    return False
+
+
+def _usado_categoria_mes(gastos, categoria, ano, mes):
+    """Soma o valor de uma categoria que efetivamente vence/ocorre no mês informado."""
+    total = 0.0
+    for g in gastos:
+        if g["categoria"] != categoria:
+            continue
+        if g["tipo"] == "credito":
+            if _parcela_vence_no_mes(g, ano, mes):
+                total += g["valor_parcela"]
+        else:
+            ano_g, mes_g, _ = (int(p) for p in g["data"].split("-"))
+            if ano_g == ano and mes_g == mes:
+                total += g["valor_total"]
+    return round(total, 2)
+
+
 def calcular_derivados(gasto):
     """Calcula os campos derivados de um gasto sem persisti-los."""
     valor_total = gasto["valor_total"]
@@ -235,6 +269,64 @@ def calcular_limites_categoria(salario):
     }
 
 
+def _avancar_rollover_emergencia(dados, gastos, ano_atual, mes_atual):
+    """Fecha, um mês de cada vez, o saldo acumulado de Emergência até alcançar
+    o mês atual. Cada mês fechado soma permanentemente ao acumulado (limite -
+    usado daquele mês); não há reposição automática, só o que sobrou (ou
+    faltou) mês a mês. Retorna True se `dados` foi alterado (precisa persistir).
+
+    Usa o salário atual pra estimar o limite de meses passados, já que não
+    existe histórico de salário por mês — simplificação aceitável pra um app
+    pessoal de um usuário só.
+    """
+    ultimo = dados.get("ultimo_mes_rollover_emergencia")
+    if ultimo is None:
+        dados["ultimo_mes_rollover_emergencia"] = f"{ano_atual:04d}-{mes_atual:02d}"
+        dados.setdefault("saldo_acumulado_emergencia", 0.0)
+        return True
+
+    ano_r, mes_r = (int(p) for p in ultimo.split("-"))
+    if (ano_r, mes_r) >= (ano_atual, mes_atual):
+        return False
+
+    limite_emergencia = calcular_limites_categoria(dados["salario"])["EMERGENCIA"]
+    acumulado = dados.get("saldo_acumulado_emergencia", 0.0)
+    while (ano_r, mes_r) < (ano_atual, mes_atual):
+        usado = _usado_categoria_mes(gastos, "EMERGENCIA", ano_r, mes_r)
+        acumulado += limite_emergencia - usado
+        ano_r, mes_r = _mes_seguinte(ano_r, mes_r)
+
+    dados["saldo_acumulado_emergencia"] = round(acumulado, 2)
+    dados["ultimo_mes_rollover_emergencia"] = f"{ano_r:04d}-{mes_r:02d}"
+    return True
+
+
+def calcular_saldos_categoria():
+    """Motor central de orçamento: limite, usado e disponível de cada
+    categoria no mês atual. Emergência também carrega `saldo_acumulado`, a
+    reserva que fecha mês a mês (ver `_avancar_rollover_emergencia`)."""
+    dados = _carregar()
+    gastos = [calcular_derivados(g) for g in dados["gastos"]]
+    ano_atual, mes_atual = _mes_atual()
+
+    if _avancar_rollover_emergencia(dados, gastos, ano_atual, mes_atual):
+        _salvar(dados)
+
+    limites = calcular_limites_categoria(dados["salario"])
+    saldos = {}
+    for categoria in CATEGORIAS_VALIDAS:
+        usado = _usado_categoria_mes(gastos, categoria, ano_atual, mes_atual)
+        limite = limites[categoria]
+        saldos[categoria] = {
+            "limite": limite,
+            "usado": usado,
+            "disponivel": round(limite - usado, 2),
+        }
+
+    saldos["EMERGENCIA"]["saldo_acumulado"] = dados.get("saldo_acumulado_emergencia", 0.0)
+    return saldos
+
+
 def calcular_resumo():
     dados = _carregar()
     salario = dados["salario"]
@@ -268,7 +360,7 @@ def calcular_resumo():
         "total_a_pagar_parcelas": round(total_a_pagar_parcelas, 2),
         "meta_investimento": dados.get("meta_investimento", 0.0),
         "sobra_salario": sobra_salario,
-        "limites_categoria": calcular_limites_categoria(salario),
+        "saldos_categoria": calcular_saldos_categoria(),
     }
 
 
